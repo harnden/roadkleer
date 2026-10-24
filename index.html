@@ -163,12 +163,14 @@ const C = {
 };
 const S = C.screens;
 const ORDER = ["animal","condition","send","feeling"];
+const MULTI = {condition:true, send:true};   // multi-select screens keep a Next button
+const OPTIONAL = {feeling:true};             // optional screens keep a button so they can be skipped
 const HKEY = "roadkleer-reports";
 const app = document.getElementById("app");
 
 let screen = "welcome";
 let picks, fix, gpsState = "idle";
-function fresh(){ picks = {animal:null,condition:null,send:[],feeling:null}; fix = null; gpsState = "idle"; }
+function fresh(){ picks = {animal:null,condition:[],send:[],feeling:null}; fix = null; gpsState = "idle"; }
 fresh();
 
 const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -211,13 +213,14 @@ function render(keepScroll){
       <button class="panic${gpsState==="wait"?" busy":""}" type="button" data-go="mark">${gpsState==="wait"?"Marking…":txt(c.button)}</button>
       <p class="lead">${txt(c.body)}</p><p class="fine">${txt(c.note)}</p></div>` + foot(c.footer);
   } else if(ORDER.includes(screen)){
-    const c = S[screen], step = ORDER.indexOf(screen)+1, multi = screen==="send";
-    const ok = screen==="feeling" || (multi ? picks.send.length>0 : !!picks[screen]);
+    const c = S[screen], step = ORDER.indexOf(screen)+1, multi = !!MULTI[screen];
+    const ok = OPTIONAL[screen] || (multi ? picks[screen].length>0 : !!picks[screen]);
+    const showBtn = multi || OPTIONAL[screen];
     h = head(c,{back:true}) + `<div class="progress"><b style="width:${step*25}%"></b></div>
       <div class="body">${step===1?gpsLine():""}<h1>${txt(c.title)}</h1>${c.sub?`<p>${txt(c.sub)}</p>`:""}
       ${options(screen, multi)}
       ${screen==="animal"?`<button class="ghost" type="button" data-go="domestic">${txt(c.domestic)}</button>`:""}
-      <button class="cta" type="button" data-go="next" ${ok?"":"disabled"}>${txt(c.next)}</button></div>` + foot(c.footer);
+      ${showBtn?`<button class="cta" type="button" data-go="next" ${ok?"":"disabled"}>${txt(c.next)}</button>`:""}</div>` + foot(c.footer);
   } else if(screen==="sending"){
     h = head(S.feeling) + `<div class="body center"><div class="gps wait"><i></i>Transmitting report…</div></div>` + foot(S.feeling.footer);
   } else if(screen==="done"){
@@ -233,7 +236,7 @@ function render(keepScroll){
     const hs = history();
     h = `<header class="head"><button class="back" type="button" data-go="home" aria-label="Back">‹</button><span class="brand">${esc(C.appName)}</span><span class="tag">My reports</span></header>
       <div class="body">${hs.length ? `<div class="list">${hs.map(r=>`<div class="item"><strong>${esc(r.animal)}</strong><span class="when">${when(r.t)}</span>
-        <span>${esc(r.condition)}</span><span class="id">${esc(r.id)}</span>
+        <span>${esc([].concat(r.condition).join(", "))}</span><span class="id">${esc(r.id)}</span>
         ${r.lat!=null?`<a href="${mapUrl(r)}" target="_blank" rel="noopener">${r.lat.toFixed(4)}, ${r.lon.toFixed(4)} ↗</a>`:`<span class="id">No pin</span>`}</div>`).join("")}</div>`
         : `<p class="empty">No reports yet.</p>`}</div>` + foot(S.welcome.footer);
   }
@@ -245,7 +248,7 @@ const when = t => new Date(t).toLocaleString([], {month:"short",day:"numeric",ho
 function receipt(r){
   return `<dl class="receipt">
     <dt>Report</dt><dd>${esc(r.id)}</dd>
-    <dt>Animal</dt><dd>${esc(r.animal)}</dd><dt>Condition</dt><dd>${esc(r.condition)}</dd>
+    <dt>Animal</dt><dd>${esc(r.animal)}</dd><dt>Condition</dt><dd>${esc([].concat(r.condition).join(", "))}</dd>
     <dt>Sent to</dt><dd>${esc(r.send.join(", "))}</dd>${r.feeling?`<dt>Feeling</dt><dd>${esc(r.feeling)}</dd>`:""}
     <dt>Logged</dt><dd>${when(r.t)}</dd>
     <dt>Spot</dt><dd>${r.lat!=null?`<a href="${mapUrl(r)}" target="_blank" rel="noopener">${r.lat.toFixed(5)}, ${r.lon.toFixed(5)} ↗</a>`:"No GPS fix"}</dd></dl>`;
@@ -267,25 +270,27 @@ function mark(){
 function submit(){
   const d = new Date();
   const id = "RK-" + String(d.getFullYear()).slice(2) + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0") + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
-  keep({id, t:d.toISOString(), animal:picks.animal, condition:picks.condition, send:picks.send.slice(), feeling:picks.feeling,
+  keep({id, t:d.toISOString(), animal:picks.animal, condition:picks.condition.slice(), send:picks.send.slice(), feeling:picks.feeling,
         lat:fix?fix.lat:null, lon:fix?fix.lon:null});
   screen = "sending"; render();
   setTimeout(()=>{ screen = "done"; render(); try{ navigator.vibrate && navigator.vibrate([20,60,20]); }catch(e){} }, 1400);
 }
 
+let autoT;
+function advance(){ const i = ORDER.indexOf(screen); if(i<0) return; if(i===ORDER.length-1) return submit(); screen = ORDER[i+1]; render(); }
 app.addEventListener("click", e=>{
   const b = e.target.closest("button"); if(!b) return;
   const g = b.dataset.go;
   if(g==="mark") return mark();
-  if(g==="next"){ const i = ORDER.indexOf(screen); if(i===ORDER.length-1) return submit(); screen = ORDER[i+1]; return render(); }
+  if(g==="next") return advance();
   if(g==="back"){ const i = ORDER.indexOf(screen); screen = i>0 ? ORDER[i-1] : (screen==="domestic" ? "animal" : "welcome"); if(screen==="welcome") fresh(); return render(); }
   if(g==="again" || g==="home"){ fresh(); screen = "welcome"; return render(); }
   if(g==="domestic" || g==="history"){ screen = g; return render(); }
   if(b.dataset.pick){
     const k = b.dataset.pick, v = b.dataset.val;
-    if(k==="send"){ const a = picks.send, i = a.indexOf(v); i<0 ? a.push(v) : a.splice(i,1); }
-    else picks[k] = picks[k]===v && k==="feeling" ? null : v;
-    render(true);
+    if(MULTI[k]){ const a = picks[k], i = a.indexOf(v); i<0 ? a.push(v) : a.splice(i,1); return render(true); }
+    picks[k] = v; render(true);
+    clearTimeout(autoT); autoT = setTimeout(advance, 220);   // single-select: move on as soon as something is picked
   }
 });
 render();
