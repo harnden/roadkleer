@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}</style>
+<title>RoadKleer Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800;900&family=Overpass+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,600;9..144,800&family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&family=Share+Tech+Mono&family=VT323&display=swap">
+<style>
+/* Layout: phone prototype on the left (asphalt stage), copy/style editor on the right; stacks under 900px. */
+:root{
+  --bg:#0b0c0a; --panel:#141612; --ink:#e9ecd8; --muted:#8f947c; --line:#2a2e22; --chip:#1c1f18;
+  --stripe:#e6ff2b; --focus:#e6ff2b;
+  --f-ui:"Overpass","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"Overpass Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#0b0c0a}}
+:root[data-theme="light"]{--bg:#eceae4; --panel:#fbfaf7; --ink:#1c1d1f; --muted:#6a6b6e; --line:#d9d6ce; --chip:#f1efe9; --focus:#1f6feb; color-scheme:light}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:28px;align-items:start}
+@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- stage ---------- */
+.stage{display:flex;flex-direction:column;align-items:center;gap:14px;position:sticky;top:max(16px,env(safe-area-inset-top,0px))}
+@media (max-width:900px){.stage{position:static}}
+.road{width:100%;border-radius:20px;padding:28px 12px;display:flex;justify-content:center;
+  background:
+    repeating-linear-gradient(90deg,transparent 0 46px,var(--stripe) 46px 50px,transparent 50px 96px) center/100% 4px no-repeat,
+    #2b2c2e;}
+.stage-meta{font-family:var(--f-mono);font-size:12px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.stage-meta button{font:inherit;color:inherit;background:none;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer}
+.stage-meta button:hover{color:var(--ink)}
+
+/* ---------- phone (fixed app look, independent of page theme) ---------- */
+.phone{
+  --a-accent:#e6ff2b; --a-alarm:#d4251c; --a-bg:#050705; --a-text:#e6ff2b; --a-muted:#9aa63c; --a-border:#262b10; --a-soft:#1d2208;
+  --a-font:var(--f-ui); --a-size:14px; --a-h:24px; --a-radius:12px;
+  width:360px;max-width:100%;height:720px;max-height:82vh;min-height:560px;background:var(--a-bg);color:var(--a-text);
+  border-radius:40px;border:10px solid #000;box-shadow:0 24px 60px rgba(0,0,0,.45),0 0 48px color-mix(in srgb,var(--a-text) 14%,transparent);position:relative;
+  display:flex;flex-direction:column;overflow:hidden;font-family:var(--a-font);font-size:var(--a-size)}
+.sbar{height:30px;flex:none;background:#000;color:var(--a-text);display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:12px;font-weight:600;font-family:var(--f-ui)}
+.sbar i{font-style:normal;letter-spacing:2px;opacity:.8}
+.ahead{flex:none;display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid var(--a-border);font-weight:800;font-size:15px}
+.ahead .back{border:none;background:none;font-size:22px;line-height:1;padding:0 4px 0 0;cursor:pointer;color:var(--a-text)}
+.ahead .tag{margin-left:auto;color:var(--a-muted);font-weight:500;font-size:12px;text-align:right}
+.progress{height:3px;background:var(--a-border);flex:none}
+.progress b{display:block;height:100%;background:var(--a-accent);transition:width .3s}
+.body{flex:1;overflow-y:auto;padding:22px 22px 18px;display:flex;flex-direction:column;gap:14px}
+.body.center{align-items:center;justify-content:center;text-align:center}
+.ah1{margin:0;font-size:var(--a-h);line-height:1.15;font-weight:700;text-wrap:balance;text-shadow:0 0 14px color-mix(in srgb,var(--a-text) 45%,transparent)}
+.phone::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:30px;background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px)}
+.phone.noscan::after{display:none}
+.ap{margin:0;color:var(--a-muted);line-height:1.5}
+.ap.lead{color:var(--a-text);font-size:1.05em}
+.fine{font-size:.86em}
+.panic{width:172px;height:172px;flex:none;border-radius:50%;border:none;background:var(--a-alarm);color:#fff;
+  font:700 calc(var(--a-size)*.93)/1.3 var(--a-font);padding:16px;cursor:pointer;
+  box-shadow:0 0 0 8px color-mix(in srgb,var(--a-alarm) 18%,transparent),0 10px 24px rgba(0,0,0,.25),inset 0 2px 0 rgba(255,255,255,.25);transition:transform .12s}
+.panic:hover{transform:scale(1.03)}.panic:active{transform:scale(.97)}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--a-border);border-radius:var(--a-radius);
+  padding:11px 12px;background:var(--a-bg);color:var(--a-text);font:inherit;cursor:pointer;transition:border-color .12s,background .12s}
+.opt:hover{border-color:color-mix(in srgb,var(--a-accent) 50%,var(--a-border))}
+.opt .dot{width:16px;height:16px;flex:none;border:2px solid var(--a-border);border-radius:50%;display:grid;place-items:center}
+.opt.multi .dot{border-radius:4px}
+.opt[aria-pressed="true"]{border-color:var(--a-accent);background:var(--a-soft)}
+.opt[aria-pressed="true"] .dot{border-color:var(--a-accent);background:var(--a-accent)}
+.opt[aria-pressed="true"] .dot::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--a-bg)}
+.opt.multi[aria-pressed="true"] .dot::after{width:8px;height:4px;border-radius:0;background:none;border:2px solid var(--a-bg);border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.cta{flex:none;margin-top:auto;border:none;border-radius:999px;padding:14px 18px;background:var(--a-accent);color:var(--a-bg);font:800 1em var(--a-font);cursor:pointer;width:100%}
+.cta:disabled{opacity:.35;cursor:not-allowed}
+.ghost{border:1px dashed var(--a-border);background:none;color:var(--a-muted);border-radius:var(--a-radius);padding:10px 12px;font:600 .9em var(--a-font);cursor:pointer;width:100%}
+.ghost:hover{color:var(--a-text);border-color:var(--a-muted)}
+.pill{display:inline-block;padding:5px 12px;border-radius:999px;background:var(--a-soft);color:var(--a-accent);font-size:.82em;font-weight:700;line-height:1.4}
+.receipt{width:100%;border:1px dashed var(--a-border);border-radius:var(--a-radius);padding:12px 14px;font-family:var(--f-mono);font-size:11.5px;text-align:left;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;color:var(--a-text)}
+.receipt dt{color:var(--a-muted)}.receipt dd{margin:0}
+.afoot{flex:none;padding:12px 18px 16px;border-top:1px solid var(--a-border);font-size:.82em;color:var(--a-muted);text-align:center;line-height:1.4}
+.phone button:focus-visible{outline:2px solid var(--a-accent);outline-offset:2px}
+
+/* ---------- editor ---------- */
+.ed{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.ed-top{padding:16px 18px 0;display:flex;flex-direction:column;gap:12px}
+.ed-top h2{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:600 12px var(--f-ui);border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:5px 10px;cursor:pointer}
+.chip[aria-current="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.tabs{display:flex;border-bottom:1px solid var(--line);margin-top:4px}
+.tab{flex:1;font:700 13px var(--f-ui);background:none;border:none;border-bottom:3px solid transparent;padding:10px 0;color:var(--muted);cursor:pointer}
+.tab[aria-selected="true"]{color:var(--ink);border-color:var(--stripe)}
+.pane{padding:16px 18px 20px;display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 220px);overflow-y:auto}
+@media (max-width:900px){.pane{max-height:none}}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.field textarea,.field input[type=text],.field select{font:14px/1.45 var(--f-ui);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;box-sizing:border-box;resize:vertical}
+.field textarea:focus,.field input:focus,.field select:focus{outline:2px solid var(--focus);outline-offset:-1px}
+.row{display:flex;gap:12px;align-items:center}
+.row input[type=range]{flex:1}
+.row output{font:12px var(--f-mono);min-width:38px;text-align:right;color:var(--muted)}
+.swatch{display:flex;align-items:center;gap:10px}
+.swatch input[type=color]{width:42px;height:32px;border:1px solid var(--line);border-radius:6px;padding:2px;background:var(--bg)}
+.hint{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:700 13px var(--f-ui);border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer}
+.btn.primary{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.btn.danger{color:#ff6b5e}
+.btn:focus-visible,.chip:focus-visible,.tab:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.saved{font:11px var(--f-mono);color:var(--muted);padding:0 18px 12px}
+hr{border:none;border-top:1px solid var(--line);margin:2px 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <section class="stage" aria-label="Prototype">
+    <div class="road"><div class="phone" id="phone"></div></div>
+    <div class="stage-meta"><span id="where"></span><button id="restart" type="button">Restart flow</button></div>
+  </section>
+
+  <aside class="ed" aria-label="Editor">
+    <div class="ed-top">
+      <h2>Screens</h2>
+      <div class="chips" id="chips"></div>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" data-tab="text" aria-selected="true">Text</button>
+        <button class="tab" role="tab" data-tab="style" aria-selected="false">Style</button>
+        <button class="tab" role="tab" data-tab="data" aria-selected="false">Save / Load</button>
+      </div>
+    </div>
+    <div class="pane" id="pane-text"></div>
+    <div class="pane" id="pane-style" hidden></div>
+    <div class="pane" id="pane-data" hidden>
+      <p class="hint">Edits save automatically to this artifact, so they're there on any device. Copy the JSON to back up your copy or move it to another device, then paste it back here to load.</p>
+      <div class="btns">
+        <button class="btn primary" id="copyJson" type="button">Copy JSON</button>
+        <button class="btn" id="loadJson" type="button">Load pasted JSON</button>
+        <button class="btn danger" id="reset" type="button">Reset to saved version</button>
+      </div>
+      <div class="field"><label for="json">JSON</label><textarea id="json" rows="12" spellcheck="false" style="font-family:var(--f-mono);font-size:12px"></textarea></div>
+      <p class="hint" id="dataMsg" aria-live="polite"></p>
+    </div>
+    <div class="saved" id="saved" aria-live="polite"></div>
+  </aside>
+</div>
+
+<script>
+const DEFAULT = {
+  "appName": "RoadKleer",
+  "style": {
+    "accent": "#e6ff2b",
+    "text": "#e6ff2b",
+    "bg": "#050705",
+    "scanlines": true,
+    "alarm": "#d4251c",
+    "font": "sharetech",
+    "size": 15,
+    "heading": 28,
+    "radius": 12,
+    "progress": true,
+    "receipt": true
+  },
+  "screens": {
+    "welcome": {
+      "tag": "We all die eventually",
+      "kicker": "Death Sucks",
+      "title": "Kleer It",
+      "button": "Tap here",
+      "body": "RoadKleer uses GPS to mark the spot",
+      "note": "(stamps placed more than .25 miles from actual roadkill may result in tax-dollar waste)",
+      "footer": "Drive with RoadKleer open for best results."
+    },
+    "animal": {
+      "tag": "Grim",
+      "title": "What got hit",
+      "options": "Deer\nSquirrel \nTurtle\nRaccoon\nSkunk\nPossum\nPorcupine\nBird\n'Dillo\nNot sure\nOther",
+      "domestic": "Cats and dogs",
+      "next": "Next",
+      "footer": "Life's short, aint it?"
+    },
+    "condition": {
+      "tag": "Grieve",
+      "title": "What condition was it in?",
+      "options": "Asunder\nStill largely intact\nLimping\nTwitching\nMashed\nSmeared\nPrefer not to say",
+      "next": "Next",
+      "footer": "Lord grant me the strength to un-see some stuff"
+    },
+    "send": {
+      "tag": "Ouch",
+      "title": "Where would you like to send your report?",
+      "sub": "Check all that apply.",
+      "options": "Municipal services\nPolice & Fire\nWork-release inmates, if possible\nInto the void (+karma)",
+      "next": "Next",
+      "footer": "RoadKleer pretends to summon cleaning services."
+    },
+    "feeling": {
+      "tag": "Breathe",
+      "title": "How do you feel?",
+      "sub": "Optional. This is just for you.",
+      "options": "Sad\nDevastated\nIndifferent\nAngry\nPhysically ill\nGuilty\nSad, angry, guilty or physically ill because indifferent\nLike maybe using RoadKleer helped a little",
+      "next": "Submit",
+      "footer": "Consider your life affirmed"
+    },
+    "done": {
+      "tag": "Good karma",
+      "pill": "Report submitted",
+      "title": "Thanks.",
+      "body": "You did the right thing. And your feelings are valid.",
+      "again": "Report another",
+      "footer": "RoadKleer does not guarantee receipt of reports."
+    },
+    "domestic": {
+      "tag": "Domesticated Animals",
+      "pill": "If you feel that your roadkill stamp marks the spot of a lost pet, please consider calling the local authorities.",
+      "title": "We acknowledge how devastating it can be to lose a pet.",
+      "body": "We are purportedly contracted with local roadkill removal personnel, not equipped to handle the loss of pets. For pets, we know you'll do the right thing. Drive safely.",
+      "back": "Home",
+      "footer": "Rest best, kleered."
+    }
+  }
+};
+
+const SCHEMA = {
+  welcome:{label:"Welcome", fields:[["tag","Header tag"],["kicker","Kicker"],["title","Headline"],["button","Big red button"],["body","Body"],["note","Fine print"],["footer","Footer"]]},
+  animal:{label:"1 · Animal", step:1, fields:[["tag","Header tag"],["title","Question"],["options","Options — one per line",true],["domestic","Pet link"],["next","Next button"],["footer","Footer"]]},
+  condition:{label:"2 · Condition", step:2, fields:[["tag","Header tag"],["title","Question"],["options","Options — one per line",true],["next","Next button"],["footer","Footer"]]},
+  send:{label:"3 · Send to", step:3, fields:[["tag","Header tag"],["title","Question"],["sub","Subtext"],["options","Options — one per line",true],["next","Next button"],["footer","Footer"]]},
+  feeling:{label:"4 · Feeling", step:4, fields:[["tag","Header tag"],["title","Question"],["sub","Subtext"],["options","Options — one per line",true],["next","Submit button"],["footer","Footer"]]},
+  done:{label:"Thanks", fields:[["tag","Header tag"],["pill","Badge"],["title","Headline"],["body","Body"],["again","Button"],["footer","Footer"]]},
+  domestic:{label:"Pets", fields:[["tag","Header tag"],["pill","Badge"],["title","Headline"],["body","Body"],["back","Button"],["footer","Footer"]]}
+};
+const FONTS = {
+  overpass:{label:"Overpass (highway sign)", css:'"Overpass","Helvetica Neue",Arial,sans-serif'},
+  system:{label:"System default", css:'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'},
+  plex:{label:"IBM Plex Sans", css:'"IBM Plex Sans","Helvetica Neue",Arial,sans-serif'},
+  fraunces:{label:"Fraunces (serif)", css:'"Fraunces",Georgia,serif'},
+  sharetech:{label:"Share Tech Mono (terminal)", css:'"Share Tech Mono","Overpass Mono",ui-monospace,Menlo,monospace'},
+  vt323:{label:"VT323 (CRT)", css:'"VT323","Share Tech Mono",ui-monospace,Menlo,monospace'},
+  plexmono:{label:"IBM Plex Mono", css:'"IBM Plex Mono",ui-monospace,Menlo,monospace'},
+  mono:{label:"Overpass Mono", css:'"Overpass Mono",ui-monospace,Menlo,monospace'}
+};
+const KEY = "roadkleer-v2";
+const clone = o => JSON.parse(JSON.stringify(o));
+function merge(base, over){ // keep new default keys if saved data lacks them
+  const out = clone(base);
+  if(!over || typeof over!=="object") return out;
+  if(typeof over.appName==="string") out.appName = over.appName;
+  Object.assign(out.style, over.style||{});
+  for(const k in out.screens) Object.assign(out.screens[k], (over.screens||{})[k]||{});
+  return out;
+}
+let S = clone(DEFAULT);
+let hadLocal = false;
+try{ const raw = localStorage.getItem(KEY); if(raw){ S = merge(DEFAULT, JSON.parse(raw)); hadLocal = true; } }catch(e){}
+
+const view = { screen:"welcome", picks:{animal:null, condition:null, send:[], feeling:null}, stamp:null };
+
+const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const txt = s => esc(s).replace(/\n/g,"<br>");
+const lines = s => String(s).split("\n").map(x=>x.trim()).filter(Boolean);
+
+/* ---------- phone render ---------- */
+const phone = document.getElementById("phone");
+function applyStyle(){
+  const st = S.style;
+  phone.style.setProperty("--a-accent", st.accent);
+  phone.style.setProperty("--a-bg", st.bg);
+  phone.style.setProperty("--a-text", st.text);
+  phone.style.setProperty("--a-muted", `color-mix(in srgb, ${st.text} 62%, ${st.bg})`);
+  phone.style.setProperty("--a-border", `color-mix(in srgb, ${st.text} 18%, ${st.bg})`);
+  phone.style.setProperty("--a-soft", `color-mix(in srgb, ${st.accent} 14%, ${st.bg})`);
+  phone.classList.toggle("noscan", !st.scanlines);
+  phone.style.setProperty("--a-alarm", st.alarm);
+  phone.style.setProperty("--a-font", (FONTS[st.font]||FONTS.overpass).css);
+  phone.style.setProperty("--a-size", st.size+"px");
+  phone.style.setProperty("--a-h", st.heading+"px");
+  phone.style.setProperty("--a-radius", st.radius+"px");
+}
+function optionList(key, multi){
+  const sel = view.picks[key];
+  return `<div class="opts" role="${multi?"group":"radiogroup"}">` + lines(S.screens[key].options).map(o=>{
+    const on = multi ? sel.includes(o) : sel===o;
+    return `<button type="button" class="opt${multi?" multi":""}" data-pick="${esc(key)}" data-val="${esc(o)}" aria-pressed="${on}"><span class="dot"></span><span>${esc(o)}</span></button>`;
+  }).join("") + `</div>`;
+}
+function render(){
+  applyStyle();
+  const k = view.screen, c = S.screens[k], sc = SCHEMA[k];
+  const step = sc.step;
+  let head = `<div class="ahead">${step?`<button class="back" type="button" data-go="back" aria-label="Back">‹</button>`:""}<span>${esc(S.appName)}</span><span class="tag">${txt(c.tag)}</span></div>`;
+  if(step && S.style.progress) head += `<div class="progress"><b style="width:${step*25}%"></b></div>`;
+  let body = "";
+  if(k==="welcome"){
+    body = `<div class="body center">
+      <p class="ap">${txt(c.kicker)}</p><h1 class="ah1">${txt(c.title)}</h1>
+      <button class="panic" type="button" data-go="animal">${txt(c.button)}</button>
+      <p class="ap lead">${txt(c.body)}</p><p class="ap fine">${txt(c.note)}</p></div>`;
+  } else if(step){
+    const multi = k==="send";
+    const needs = k!=="feeling";
+    const ok = !needs || (multi ? view.picks.send.length>0 : !!view.picks[k]);
+    body = `<div class="body"><h1 class="ah1">${txt(c.title)}</h1>${c.sub?`<p class="ap">${txt(c.sub)}</p>`:""}
+      ${optionList(k, multi)}
+      ${k==="animal"?`<button class="ghost" type="button" data-go="domestic">${txt(c.domestic)}</button>`:""}
+      <button class="cta" type="button" data-go="next" ${ok?"":"disabled"}>${txt(c.next)}</button></div>`;
+  } else if(k==="done"){
+    const p = view.picks, st = view.stamp || stamp();
+    const receipt = S.style.receipt ? `<dl class="receipt">
+      <dt>Animal</dt><dd>${esc(p.animal||"—")}</dd><dt>Condition</dt><dd>${esc(p.condition||"—")}</dd>
+      <dt>Sent to</dt><dd>${esc(p.send.join(", ")||"—")}</dd><dt>Feeling</dt><dd>${esc(p.feeling||"—")}</dd>
+      <dt>Logged</dt><dd>${st.time}</dd><dt>GPS</dt><dd>${st.gps} <span style="color:var(--a-muted)">(simulated)</span></dd></dl>` : "";
+    body = `<div class="body center"><span class="pill">${txt(c.pill)}</span><h1 class="ah1">${txt(c.title)}</h1><p class="ap lead">${txt(c.body)}</p>${receipt}
+      <button class="cta" type="button" data-go="reset" style="margin-top:8px">${txt(c.again)}</button></div>`;
+  } else if(k==="domestic"){
+    body = `<div class="body center"><span class="pill">${txt(c.pill)}</span><h1 class="ah1" style="font-size:calc(var(--a-h)*.85)">${txt(c.title)}</h1><p class="ap">${txt(c.body)}</p>
+      <button class="cta" type="button" data-go="welcome" style="margin-top:8px">${txt(c.back)}</button></div>`;
+  }
+  phone.innerHTML = `<div class="sbar"><span>9:41</span><i>▂▄▆ ◔</i></div>${head}${body}<div class="afoot">${txt(c.footer)}</div>`;
+  document.getElementById("where").textContent = "Viewing: " + sc.label;
+  document.querySelectorAll(".chip").forEach(ch=>ch.setAttribute("aria-current", ch.dataset.screen===k));
+}
+function stamp(){
+  const lat = (30 + Math.random()*5).toFixed(4), lon = (95 + Math.random()*6).toFixed(4);
+  const d = new Date();
+  view.stamp = { time: d.toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}), gps:`${lat}° N, ${lon}° W` };
+  return view.stamp;
+}
+const ORDER = ["animal","condition","send","feeling","done"];
+function go(to){
+  const k = view.screen;
+  if(to==="next"){ to = ORDER[ORDER.indexOf(k)+1]; if(to==="done") stamp(); }
+  else if(to==="back"){ to = ORDER.indexOf(k)>0 ? ORDER[ORDER.indexOf(k)-1] : "welcome"; }
+  else if(to==="reset"){ resetPicks(); to="welcome"; }
+  view.screen = to; render(); fillText();
+  phone.querySelector(".body")?.scrollTo(0,0);
+}
+function resetPicks(){ view.picks = {animal:null,condition:null,send:[],feeling:null}; view.stamp=null; }
+phone.addEventListener("click", e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  if(b.dataset.go) return go(b.dataset.go);
+  if(b.dataset.pick){
+    const key=b.dataset.pick, v=b.dataset.val;
+    if(key==="send"){ const a=view.picks.send; const i=a.indexOf(v); i<0?a.push(v):a.splice(i,1); }
+    else view.picks[key] = view.picks[key]===v ? (key==="feeling"?null:v) : v;
+    const y = phone.querySelector(".body").scrollTop;
+    render(); phone.querySelector(".body").scrollTop = y;
+  }
+});
+document.getElementById("restart").onclick = ()=>go("reset");
+
+/* ---------- persistence ---------- */
+let saveT, dbRef = null, writing = false, dirty = false;
+const status = t => document.getElementById("saved").textContent = t;
+const now = () => new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit",second:"2-digit"});
+async function pushDb(){
+  if(!dbRef || writing) return;
+  writing = true; dirty = false;
+  try{ await dbRef.set({ json: JSON.stringify(S), savedAt: new Date().toISOString() }); status("Saved to this artifact · " + now()); }
+  catch(e){ status("Couldn't save to the artifact (" + (e && e.code || "error") + "). Use Save / Load → Copy JSON to keep a copy."); }
+  writing = false;
+  if(dirty) pushDb();
+}
+function save(){
+  clearTimeout(saveT);
+  saveT = setTimeout(()=>{
+    let ok = true; try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ ok=false; }
+    if(dbRef){ dirty = true; status("Saving…"); pushDb(); }
+    else status(ok ? "Saved in this browser only · " + now() + ". Use Save / Load → Copy JSON to keep a copy." : "Couldn't save. Use Save / Load → Copy JSON.");
+  }, 800);
+}
+(async ()=>{
+  let db = null;
+  try{ db = window.claude && window.claude.use ? await window.claude.use("db") : null; }catch(e){}
+  if(!db){ status("Edits save in this browser only. Use Save / Load → Copy JSON to keep a copy."); return; }
+  try{
+    const ref = db.doc("config/main");
+    const snap = await ref.get();
+    dbRef = ref;
+    if(snap.exists){
+      S = merge(DEFAULT, JSON.parse(snap.data().json)); resetPicks(); fillStyle(); render(); fillText();
+      try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+      status("Loaded your saved copy · " + now());
+    } else if(hadLocal){ dirty = true; pushDb(); }
+    else status("Edits save to this artifact.");
+  }catch(e){ status("Edits save in this browser only. Use Save / Load → Copy JSON to keep a copy."); }
+})();
+
+
+/* ---------- editor ---------- */
+const chips = document.getElementById("chips");
+chips.innerHTML = Object.entries(SCHEMA).map(([k,v])=>`<button class="chip" type="button" data-screen="${k}">${esc(v.label)}</button>`).join("");
+chips.onclick = e=>{ const c=e.target.closest(".chip"); if(c) go(c.dataset.screen); };
+
+const paneText = document.getElementById("pane-text");
+function fillText(){
+  const k = view.screen, c = S.screens[k];
+  paneText.innerHTML = `<div class="field"><label for="f-app">App name <span>all screens</span></label><input type="text" id="f-app" value="${esc(S.appName)}"></div><hr>` +
+    SCHEMA[k].fields.map(([f,label,isList])=>{
+      const v = c[f]; const rows = Math.min(10, Math.max(isList?lines(v).length:1, Math.ceil(String(v).length/42), String(v).split("\n").length));
+      return `<div class="field"><label for="f-${k}-${f}">${esc(label)}${isList?`<span>${lines(v).length} items</span>`:""}</label><textarea id="f-${k}-${f}" data-f="${f}" rows="${rows}">${esc(v)}</textarea></div>`;
+    }).join("") + `<p class="hint">Line breaks show as line breaks in the app. Changing an option's wording clears it if it was selected.</p>`;
+}
+paneText.addEventListener("input", e=>{
+  const t = e.target;
+  if(t.id==="f-app") S.appName = t.value;
+  else if(t.dataset.f){
+    const k=view.screen, f=t.dataset.f; S.screens[k][f] = t.value;
+    if(f==="options"){
+      const valid = lines(t.value);
+      if(k==="send") view.picks.send = view.picks.send.filter(x=>valid.includes(x));
+      else if(!valid.includes(view.picks[k])) view.picks[k]=null;
+      const lab = t.previousElementSibling.querySelector("span"); if(lab) lab.textContent = valid.length+" items";
+    }
+  }
+  render(); save();
+});
+
+const paneStyle = document.getElementById("pane-style");
+function fillStyle(){
+  const st = S.style;
+  paneStyle.innerHTML = `
+    <div class="field"><label for="s-font">Typeface</label><select id="s-font">${Object.entries(FONTS).map(([k,f])=>`<option value="${k}" ${k===st.font?"selected":""}>${f.label}</option>`).join("")}</select></div>
+    <div class="field"><label for="s-size">Body text size</label><div class="row"><input type="range" id="s-size" min="12" max="18" step="0.5" value="${st.size}"><output>${st.size}px</output></div></div>
+    <div class="field"><label for="s-heading">Headline size</label><div class="row"><input type="range" id="s-heading" min="18" max="36" step="1" value="${st.heading}"><output>${st.heading}px</output></div></div>
+    <div class="field"><label for="s-radius">Option corner radius</label><div class="row"><input type="range" id="s-radius" min="0" max="24" step="1" value="${st.radius}"><output>${st.radius}px</output></div></div>
+    <hr>
+    <div class="field"><label for="s-text">Text color</label><div class="swatch"><input type="color" id="s-text" value="${st.text}"><span class="hint">${st.text}</span></div></div>
+    <div class="field"><label for="s-bg">Background</label><div class="swatch"><input type="color" id="s-bg" value="${st.bg}"><span class="hint">${st.bg}</span></div></div>
+    <div class="field"><label for="s-accent">Accent (buttons, selections)</label><div class="swatch"><input type="color" id="s-accent" value="${st.accent}"><span class="hint">${st.accent}</span></div></div>
+    <div class="field"><label for="s-alarm">Big button</label><div class="swatch"><input type="color" id="s-alarm" value="${st.alarm}"><span class="hint">${st.alarm}</span></div></div>
+    <hr>
+    <label class="row hint"><input type="checkbox" id="s-scanlines" ${st.scanlines?"checked":""}> Scanlines</label>
+    <label class="row hint"><input type="checkbox" id="s-progress" ${st.progress?"checked":""}> Show progress bar on report steps</label>
+    <label class="row hint"><input type="checkbox" id="s-receipt" ${st.receipt?"checked":""}> Show report receipt on Thanks screen</label>`;
+}
+paneStyle.addEventListener("input", e=>{
+  const t=e.target, k=t.id.replace("s-",""); if(!(k in S.style)) return;
+  S.style[k] = t.type==="checkbox" ? t.checked : (t.type==="range" ? +t.value : t.value);
+  const out = t.parentElement.querySelector("output, .hint"); if(out && t.type!=="checkbox") out.textContent = t.type==="range" ? t.value+"px" : t.value;
+  render(); save();
+});
+
+document.querySelectorAll(".tab").forEach(tb=>tb.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected", x===tb));
+  for(const p of ["text","style","data"]) document.getElementById("pane-"+p).hidden = p!==tb.dataset.tab;
+  if(tb.dataset.tab==="data") document.getElementById("json").value = JSON.stringify(S,null,2);
+});
+
+const msg = t=>document.getElementById("dataMsg").textContent=t;
+document.getElementById("copyJson").onclick = ()=>{
+  const ta = document.getElementById("json"); ta.value = JSON.stringify(S,null,2);
+  navigator.clipboard.writeText(ta.value).then(()=>msg("Copied to clipboard.")).catch(()=>{ ta.focus(); ta.select(); msg("Clipboard blocked — the JSON is selected, press Cmd/Ctrl+C."); });
+};
+document.getElementById("loadJson").onclick = ()=>{
+  try{ S = merge(DEFAULT, JSON.parse(document.getElementById("json").value)); resetPicks(); fillStyle(); go("welcome"); save(); msg("Loaded."); }
+  catch(e){ msg("That isn't valid JSON. Paste the full block you copied, starting with {."); }
+};
+let armed=false, armT;
+document.getElementById("reset").onclick = e=>{
+  const b=e.currentTarget;
+  if(!armed){ armed=true; b.textContent="Click again to reset all edits"; armT=setTimeout(()=>{armed=false;b.textContent="Reset to saved version";},3000); return; }
+  clearTimeout(armT); armed=false; b.textContent="Reset to saved version";
+  S = clone(DEFAULT); resetPicks(); fillStyle(); go("welcome"); save();
+  document.getElementById("json").value = JSON.stringify(S,null,2); msg("Reset to the version built into the file.");
+};
+
+fillStyle(); render(); fillText();
+</script>
+</body>
+</html>
