@@ -3,473 +3,292 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>[hidden]{display:none!important}</style>
-<title>RoadKleer Prototype</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<title>RoadKleer</title>
+<meta name="description" content="Mark the spot. Kleer the road.">
+<meta name="theme-color" content="#050705">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RoadKleer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050705'/%3E%3Ccircle cx='32' cy='32' r='16' fill='%23d4251c'/%3E%3Crect x='8' y='30' width='10' height='4' fill='%23e6ff2b'/%3E%3Crect x='46' y='30' width='10' height='4' fill='%23e6ff2b'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800;900&family=Overpass+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,600;9..144,800&family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&family=Share+Tech+Mono&family=VT323&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap">
 <style>
-/* Layout: phone prototype on the left (asphalt stage), copy/style editor on the right; stacks under 900px. */
 :root{
-  --bg:#0b0c0a; --panel:#141612; --ink:#e9ecd8; --muted:#8f947c; --line:#2a2e22; --chip:#1c1f18;
-  --stripe:#e6ff2b; --focus:#e6ff2b;
-  --f-ui:"Overpass","Helvetica Neue",Arial,sans-serif;
-  --f-mono:"Overpass Mono",ui-monospace,Menlo,monospace;
+  --bg:#050705; --text:#e6ff2b; --accent:#e6ff2b; --alarm:#d4251c;
+  --muted:color-mix(in srgb,var(--text) 62%,var(--bg));
+  --border:color-mix(in srgb,var(--text) 18%,var(--bg));
+  --soft:color-mix(in srgb,var(--accent) 14%,var(--bg));
+  --font:"Share Tech Mono","Overpass Mono",ui-monospace,Menlo,Consolas,monospace;
+  --size:15px; --h:28px; --radius:12px;
   color-scheme:dark;
 }
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#0b0c0a}}
-:root[data-theme="light"]{--bg:#eceae4; --panel:#fbfaf7; --ink:#1c1d1f; --muted:#6a6b6e; --line:#d9d6ce; --chip:#f1efe9; --focus:#1f6feb; color-scheme:light}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:#000;color:var(--text);font:var(--size)/1.45 var(--font);-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+button{font:inherit;color:inherit}
+.app{position:relative;height:100%;max-width:440px;margin:0 auto;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (min-width:500px){.app{border-left:1px solid var(--border);border-right:1px solid var(--border);box-shadow:0 0 80px color-mix(in srgb,var(--text) 10%,transparent)}}
+.app::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:5;background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px)}
 
-html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);margin:0;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px}
-.wrap{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:28px;align-items:start}
-@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}}
+.head{flex:none;display:flex;align-items:center;gap:8px;padding:14px max(18px,env(safe-area-inset-right,0px)) 14px max(18px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--border);font-size:16px}
+.head .brand{font-weight:700;letter-spacing:.02em;text-shadow:0 0 10px color-mix(in srgb,var(--text) 40%,transparent)}
+.head .back{border:none;background:none;font-size:24px;line-height:1;padding:0 6px 0 0;cursor:pointer}
+.head .tag{margin-left:auto;color:var(--muted);font-size:13px;text-align:right}
+.head .hist{margin-left:auto;border:1px solid var(--border);background:none;border-radius:999px;padding:4px 10px;font-size:12px;color:var(--muted);cursor:pointer}
+.head .hist + .tag{margin-left:10px}
+.progress{height:3px;background:var(--border);flex:none}
+.progress b{display:block;height:100%;background:var(--accent);box-shadow:0 0 8px var(--accent);transition:width .3s}
 
-/* ---------- stage ---------- */
-.stage{display:flex;flex-direction:column;align-items:center;gap:14px;position:sticky;top:max(16px,env(safe-area-inset-top,0px))}
-@media (max-width:900px){.stage{position:static}}
-.road{width:100%;border-radius:20px;padding:28px 12px;display:flex;justify-content:center;
-  background:
-    repeating-linear-gradient(90deg,transparent 0 46px,var(--stripe) 46px 50px,transparent 50px 96px) center/100% 4px no-repeat,
-    #2b2c2e;}
-.stage-meta{font-family:var(--f-mono);font-size:12px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-.stage-meta button{font:inherit;color:inherit;background:none;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer}
-.stage-meta button:hover{color:var(--ink)}
-
-/* ---------- phone (fixed app look, independent of page theme) ---------- */
-.phone{
-  --a-accent:#e6ff2b; --a-alarm:#d4251c; --a-bg:#050705; --a-text:#e6ff2b; --a-muted:#9aa63c; --a-border:#262b10; --a-soft:#1d2208;
-  --a-font:var(--f-ui); --a-size:14px; --a-h:24px; --a-radius:12px;
-  width:360px;max-width:100%;height:720px;max-height:82vh;min-height:560px;background:var(--a-bg);color:var(--a-text);
-  border-radius:40px;border:10px solid #000;box-shadow:0 24px 60px rgba(0,0,0,.45),0 0 48px color-mix(in srgb,var(--a-text) 14%,transparent);position:relative;
-  display:flex;flex-direction:column;overflow:hidden;font-family:var(--a-font);font-size:var(--a-size)}
-.sbar{height:30px;flex:none;background:#000;color:var(--a-text);display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:12px;font-weight:600;font-family:var(--f-ui)}
-.sbar i{font-style:normal;letter-spacing:2px;opacity:.8}
-.ahead{flex:none;display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid var(--a-border);font-weight:800;font-size:15px}
-.ahead .back{border:none;background:none;font-size:22px;line-height:1;padding:0 4px 0 0;cursor:pointer;color:var(--a-text)}
-.ahead .tag{margin-left:auto;color:var(--a-muted);font-weight:500;font-size:12px;text-align:right}
-.progress{height:3px;background:var(--a-border);flex:none}
-.progress b{display:block;height:100%;background:var(--a-accent);transition:width .3s}
-.body{flex:1;overflow-y:auto;padding:22px 22px 18px;display:flex;flex-direction:column;gap:14px}
+.body{flex:1;overflow-y:auto;padding:22px max(22px,env(safe-area-inset-right,0px)) 18px max(22px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
 .body.center{align-items:center;justify-content:center;text-align:center}
-.ah1{margin:0;font-size:var(--a-h);line-height:1.15;font-weight:700;text-wrap:balance;text-shadow:0 0 14px color-mix(in srgb,var(--a-text) 45%,transparent)}
-.phone::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:30px;background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px)}
-.phone.noscan::after{display:none}
-.ap{margin:0;color:var(--a-muted);line-height:1.5}
-.ap.lead{color:var(--a-text);font-size:1.05em}
+h1{margin:0;font-size:var(--h);line-height:1.15;font-weight:700;text-wrap:balance;text-shadow:0 0 14px color-mix(in srgb,var(--text) 45%,transparent)}
+p{margin:0;color:var(--muted)}
+.lead{color:var(--text);font-size:1.05em}
 .fine{font-size:.86em}
-.panic{width:172px;height:172px;flex:none;border-radius:50%;border:none;background:var(--a-alarm);color:#fff;
-  font:700 calc(var(--a-size)*.93)/1.3 var(--a-font);padding:16px;cursor:pointer;
-  box-shadow:0 0 0 8px color-mix(in srgb,var(--a-alarm) 18%,transparent),0 10px 24px rgba(0,0,0,.25),inset 0 2px 0 rgba(255,255,255,.25);transition:transform .12s}
-.panic:hover{transform:scale(1.03)}.panic:active{transform:scale(.97)}
-.opts{display:flex;flex-direction:column;gap:8px}
-.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--a-border);border-radius:var(--a-radius);
-  padding:11px 12px;background:var(--a-bg);color:var(--a-text);font:inherit;cursor:pointer;transition:border-color .12s,background .12s}
-.opt:hover{border-color:color-mix(in srgb,var(--a-accent) 50%,var(--a-border))}
-.opt .dot{width:16px;height:16px;flex:none;border:2px solid var(--a-border);border-radius:50%;display:grid;place-items:center}
-.opt.multi .dot{border-radius:4px}
-.opt[aria-pressed="true"]{border-color:var(--a-accent);background:var(--a-soft)}
-.opt[aria-pressed="true"] .dot{border-color:var(--a-accent);background:var(--a-accent)}
-.opt[aria-pressed="true"] .dot::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--a-bg)}
-.opt.multi[aria-pressed="true"] .dot::after{width:8px;height:4px;border-radius:0;background:none;border:2px solid var(--a-bg);border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
-.cta{flex:none;margin-top:auto;border:none;border-radius:999px;padding:14px 18px;background:var(--a-accent);color:var(--a-bg);font:800 1em var(--a-font);cursor:pointer;width:100%}
-.cta:disabled{opacity:.35;cursor:not-allowed}
-.ghost{border:1px dashed var(--a-border);background:none;color:var(--a-muted);border-radius:var(--a-radius);padding:10px 12px;font:600 .9em var(--a-font);cursor:pointer;width:100%}
-.ghost:hover{color:var(--a-text);border-color:var(--a-muted)}
-.pill{display:inline-block;padding:5px 12px;border-radius:999px;background:var(--a-soft);color:var(--a-accent);font-size:.82em;font-weight:700;line-height:1.4}
-.receipt{width:100%;border:1px dashed var(--a-border);border-radius:var(--a-radius);padding:12px 14px;font-family:var(--f-mono);font-size:11.5px;text-align:left;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;color:var(--a-text)}
-.receipt dt{color:var(--a-muted)}.receipt dd{margin:0}
-.afoot{flex:none;padding:12px 18px 16px;border-top:1px solid var(--a-border);font-size:.82em;color:var(--a-muted);text-align:center;line-height:1.4}
-.phone button:focus-visible{outline:2px solid var(--a-accent);outline-offset:2px}
+.kicker{letter-spacing:.14em;text-transform:uppercase;font-size:.82em}
 
-/* ---------- editor ---------- */
-.ed{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-.ed-top{padding:16px 18px 0;display:flex;flex-direction:column;gap:12px}
-.ed-top h2{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{font:600 12px var(--f-ui);border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:5px 10px;cursor:pointer}
-.chip[aria-current="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
-.tabs{display:flex;border-bottom:1px solid var(--line);margin-top:4px}
-.tab{flex:1;font:700 13px var(--f-ui);background:none;border:none;border-bottom:3px solid transparent;padding:10px 0;color:var(--muted);cursor:pointer}
-.tab[aria-selected="true"]{color:var(--ink);border-color:var(--stripe)}
-.pane{padding:16px 18px 20px;display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 220px);overflow-y:auto}
-@media (max-width:900px){.pane{max-height:none}}
-.field{display:flex;flex-direction:column;gap:5px}
-.field label{font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
-.field textarea,.field input[type=text],.field select{font:14px/1.45 var(--f-ui);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;box-sizing:border-box;resize:vertical}
-.field textarea:focus,.field input:focus,.field select:focus{outline:2px solid var(--focus);outline-offset:-1px}
-.row{display:flex;gap:12px;align-items:center}
-.row input[type=range]{flex:1}
-.row output{font:12px var(--f-mono);min-width:38px;text-align:right;color:var(--muted)}
-.swatch{display:flex;align-items:center;gap:10px}
-.swatch input[type=color]{width:42px;height:32px;border:1px solid var(--line);border-radius:6px;padding:2px;background:var(--bg)}
-.hint{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
-.btns{display:flex;gap:8px;flex-wrap:wrap}
-.btn{font:700 13px var(--f-ui);border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer}
-.btn.primary{background:var(--ink);color:var(--panel);border-color:var(--ink)}
-.btn.danger{color:#ff6b5e}
-.btn:focus-visible,.chip:focus-visible,.tab:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.saved{font:11px var(--f-mono);color:var(--muted);padding:0 18px 12px}
-hr{border:none;border-top:1px solid var(--line);margin:2px 0}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.panic{position:relative;width:188px;height:188px;flex:none;margin-block:18px;border-radius:50%;border:none;background:var(--alarm);color:#fff;
+  font-size:1.05em;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  box-shadow:0 0 0 10px color-mix(in srgb,var(--alarm) 16%,transparent),0 0 0 22px color-mix(in srgb,var(--alarm) 7%,transparent),0 12px 30px rgba(0,0,0,.6),inset 0 2px 0 rgba(255,255,255,.25);
+  transition:transform .12s}
+.panic:active{transform:scale(.96)}
+.panic::before{content:"";position:absolute;inset:-10px;border-radius:50%;border:2px solid var(--alarm);opacity:0;animation:ping 2.4s ease-out infinite}
+@keyframes ping{0%{transform:scale(.92);opacity:.7}100%{transform:scale(1.35);opacity:0}}
+.panic.busy{pointer-events:none}
+.panic.busy::before{animation-duration:.9s}
+
+.gps{font-size:.82em;color:var(--muted);display:flex;align-items:center;gap:8px}
+.gps i{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.gps.on i{background:#3dff6a;box-shadow:0 0 8px #3dff6a}
+.gps.wait i{background:var(--accent);animation:blink .8s steps(2) infinite}
+@keyframes blink{50%{opacity:.2}}
+
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--border);border-radius:var(--radius);padding:13px 14px;background:var(--bg);cursor:pointer;transition:border-color .12s,background .12s}
+.opt .dot{width:16px;height:16px;flex:none;border:2px solid var(--border);border-radius:50%;display:grid;place-items:center}
+.opt.multi .dot{border-radius:4px}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--soft)}
+.opt[aria-pressed="true"] .dot{border-color:var(--accent);background:var(--accent)}
+.opt[aria-pressed="true"] .dot::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--bg)}
+.opt.multi[aria-pressed="true"] .dot::after{width:8px;height:4px;border-radius:0;background:none;border:2px solid var(--bg);border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.cta{flex:none;margin-top:auto;border:none;border-radius:999px;padding:15px 18px;background:var(--accent);color:var(--bg);font-weight:700;letter-spacing:.04em;cursor:pointer;width:100%;box-shadow:0 0 18px color-mix(in srgb,var(--accent) 35%,transparent)}
+.cta:disabled{opacity:.3;box-shadow:none;cursor:not-allowed}
+.cta.busy{opacity:.7}
+.ghost{border:1px dashed var(--border);background:none;color:var(--muted);border-radius:var(--radius);padding:11px 12px;font-size:.92em;cursor:pointer;width:100%}
+.pill{display:inline-block;padding:5px 12px;border-radius:999px;background:var(--soft);color:var(--accent);font-size:.82em;line-height:1.4;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+.receipt{width:100%;border:1px dashed var(--border);border-radius:var(--radius);padding:14px;font-size:12.5px;text-align:left;display:grid;grid-template-columns:auto 1fr;gap:5px 14px}
+.receipt dt{color:var(--muted)}.receipt dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.receipt a{color:var(--text)}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:2px 12px;font-size:.92em}
+.item .id{color:var(--muted);font-size:.85em}
+.item .when{color:var(--muted);font-size:.85em;text-align:right}
+.item a{color:var(--muted);font-size:.85em}
+.empty{color:var(--muted);text-align:center;margin:auto 0}
+.foot{flex:none;padding:12px 18px 14px;border-top:1px solid var(--border);font-size:.8em;color:var(--muted);text-align:center;line-height:1.4}
+.toast{position:absolute;left:50%;bottom:calc(70px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:.85em;z-index:6;white-space:nowrap}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.screen{animation:in .22s ease-out}
+@keyframes in{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-
-<div class="wrap">
-  <section class="stage" aria-label="Prototype">
-    <div class="road"><div class="phone" id="phone"></div></div>
-    <div class="stage-meta"><span id="where"></span><button id="restart" type="button">Restart flow</button></div>
-  </section>
-
-  <aside class="ed" aria-label="Editor">
-    <div class="ed-top">
-      <h2>Screens</h2>
-      <div class="chips" id="chips"></div>
-      <div class="tabs" role="tablist">
-        <button class="tab" role="tab" data-tab="text" aria-selected="true">Text</button>
-        <button class="tab" role="tab" data-tab="style" aria-selected="false">Style</button>
-        <button class="tab" role="tab" data-tab="data" aria-selected="false">Save / Load</button>
-      </div>
-    </div>
-    <div class="pane" id="pane-text"></div>
-    <div class="pane" id="pane-style" hidden></div>
-    <div class="pane" id="pane-data" hidden>
-      <p class="hint">Edits save automatically to this artifact, so they're there on any device. Copy the JSON to back up your copy or move it to another device, then paste it back here to load.</p>
-      <div class="btns">
-        <button class="btn primary" id="copyJson" type="button">Copy JSON</button>
-        <button class="btn" id="loadJson" type="button">Load pasted JSON</button>
-        <button class="btn danger" id="reset" type="button">Reset to saved version</button>
-      </div>
-      <div class="field"><label for="json">JSON</label><textarea id="json" rows="12" spellcheck="false" style="font-family:var(--f-mono);font-size:12px"></textarea></div>
-      <p class="hint" id="dataMsg" aria-live="polite"></p>
-    </div>
-    <div class="saved" id="saved" aria-live="polite"></div>
-  </aside>
-</div>
-
+<main class="app" id="app" aria-live="polite"></main>
 <script>
-const DEFAULT = {
-  "appName": "RoadKleer",
-  "style": {
-    "accent": "#e6ff2b",
-    "text": "#e6ff2b",
-    "bg": "#050705",
-    "scanlines": true,
-    "alarm": "#d4251c",
-    "font": "sharetech",
-    "size": 15,
-    "heading": 28,
-    "radius": 12,
-    "progress": true,
-    "receipt": true
+const C = {
+ "appName": "RoadKleer",
+ "screens": {
+  "welcome": {
+   "tag": "We all die eventually",
+   "kicker": "Death Sucks",
+   "title": "Kleer It",
+   "button": "Tap here",
+   "body": "RoadKleer uses GPS to mark the spot",
+   "note": "(Errant takes make tax-dollar waste)",
+   "footer": "Drive with RoadKleer ready for best results"
   },
-  "screens": {
-    "welcome": {
-      "tag": "We all die eventually",
-      "kicker": "Death Sucks",
-      "title": "Kleer It",
-      "button": "Tap here",
-      "body": "RoadKleer uses GPS to mark the spot",
-      "note": "(stamps placed more than .25 miles from actual roadkill may result in tax-dollar waste)",
-      "footer": "Drive with RoadKleer open for best results."
-    },
-    "animal": {
-      "tag": "Grim",
-      "title": "What got hit",
-      "options": "Deer\nSquirrel \nTurtle\nRaccoon\nSkunk\nPossum\nPorcupine\nBird\n'Dillo\nNot sure\nOther",
-      "domestic": "Cats and dogs",
-      "next": "Next",
-      "footer": "Life's short, aint it?"
-    },
-    "condition": {
-      "tag": "Grieve",
-      "title": "What condition was it in?",
-      "options": "Asunder\nStill largely intact\nLimping\nTwitching\nMashed\nSmeared\nPrefer not to say",
-      "next": "Next",
-      "footer": "Lord grant me the strength to un-see some stuff"
-    },
-    "send": {
-      "tag": "Ouch",
-      "title": "Where would you like to send your report?",
-      "sub": "Check all that apply.",
-      "options": "Municipal services\nPolice & Fire\nWork-release inmates, if possible\nInto the void (+karma)",
-      "next": "Next",
-      "footer": "RoadKleer pretends to summon cleaning services."
-    },
-    "feeling": {
-      "tag": "Breathe",
-      "title": "How do you feel?",
-      "sub": "Optional. This is just for you.",
-      "options": "Sad\nDevastated\nIndifferent\nAngry\nPhysically ill\nGuilty\nSad, angry, guilty or physically ill because indifferent\nLike maybe using RoadKleer helped a little",
-      "next": "Submit",
-      "footer": "Consider your life affirmed"
-    },
-    "done": {
-      "tag": "Good karma",
-      "pill": "Report submitted",
-      "title": "Thanks.",
-      "body": "You did the right thing. And your feelings are valid.",
-      "again": "Report another",
-      "footer": "RoadKleer does not guarantee receipt of reports."
-    },
-    "domestic": {
-      "tag": "Domesticated Animals",
-      "pill": "If you feel that your roadkill stamp marks the spot of a lost pet, please consider calling the local authorities.",
-      "title": "We acknowledge how devastating it can be to lose a pet.",
-      "body": "We are purportedly contracted with local roadkill removal personnel, not equipped to handle the loss of pets. For pets, we know you'll do the right thing. Drive safely.",
-      "back": "Home",
-      "footer": "Rest best, kleered."
-    }
+  "animal": {
+   "tag": "Grim",
+   "title": "What got hit",
+   "options": "Deer\nSquirrel \nTurtle\nRaccoon\nSkunk\nPossum\nPorcupine\nBird\n'Dillo\nNot sure\nMy feelgoods\nOther",
+   "domestic": "Cats and dogs",
+   "next": "Next",
+   "footer": "Life's short, aint it?"
+  },
+  "condition": {
+   "tag": "Grief is good",
+   "title": "What condition its condition was in",
+   "options": "Asunder\nMostly intact\nLimping\nTwitching\nMashed\nSmeared\nPrefer not to say",
+   "next": "Next",
+   "footer": "Lord grant us the strength to un-see some stuff"
+  },
+  "send": {
+   "tag": "Ouch",
+   "title": "Where would you like to send your report?",
+   "sub": "Check all that apply.",
+   "options": "Municipal services\nPolice & Fire\nWork-release inmates (if avail.)\nInto the void (+karma)",
+   "next": "Next",
+   "footer": "RoadKleer pretends to summon cleaning services "
+  },
+  "feeling": {
+   "tag": "Breathe",
+   "title": "How do you feel?",
+   "sub": "(this part is for you)",
+   "options": "Sad\nDevastated\nIndifferent\nAngry\nPhysically ill\nGuilty\nSelf-reflexively sad, angry, guilty or physically ill due to lack of human emotion such as the above\nLike maybe, in its own small way, using RoadKleer helped",
+   "next": "Submit",
+   "footer": "Consider your life affirmed"
+  },
+  "done": {
+   "tag": "Good karma",
+   "pill": "Report submitted",
+   "title": "Thanks.",
+   "body": "You're still here, doing stuff",
+   "again": "Report another",
+   "footer": "RoadKleer does not guarantee receipt  of reports"
+  },
+  "domestic": {
+   "tag": "Domesticated Animals",
+   "pill": "Pet?",
+   "title": "We acknowledge how devastating it can be to lose a pal.",
+   "body": "Pets are past our purr-view.",
+   "back": "Home",
+   "footer": "Rest best, kleered."
   }
+ }
 };
+const S = C.screens;
+const ORDER = ["animal","condition","send","feeling"];
+const HKEY = "roadkleer-reports";
+const app = document.getElementById("app");
 
-const SCHEMA = {
-  welcome:{label:"Welcome", fields:[["tag","Header tag"],["kicker","Kicker"],["title","Headline"],["button","Big red button"],["body","Body"],["note","Fine print"],["footer","Footer"]]},
-  animal:{label:"1 · Animal", step:1, fields:[["tag","Header tag"],["title","Question"],["options","Options — one per line",true],["domestic","Pet link"],["next","Next button"],["footer","Footer"]]},
-  condition:{label:"2 · Condition", step:2, fields:[["tag","Header tag"],["title","Question"],["options","Options — one per line",true],["next","Next button"],["footer","Footer"]]},
-  send:{label:"3 · Send to", step:3, fields:[["tag","Header tag"],["title","Question"],["sub","Subtext"],["options","Options — one per line",true],["next","Next button"],["footer","Footer"]]},
-  feeling:{label:"4 · Feeling", step:4, fields:[["tag","Header tag"],["title","Question"],["sub","Subtext"],["options","Options — one per line",true],["next","Submit button"],["footer","Footer"]]},
-  done:{label:"Thanks", fields:[["tag","Header tag"],["pill","Badge"],["title","Headline"],["body","Body"],["again","Button"],["footer","Footer"]]},
-  domestic:{label:"Pets", fields:[["tag","Header tag"],["pill","Badge"],["title","Headline"],["body","Body"],["back","Button"],["footer","Footer"]]}
-};
-const FONTS = {
-  overpass:{label:"Overpass (highway sign)", css:'"Overpass","Helvetica Neue",Arial,sans-serif'},
-  system:{label:"System default", css:'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'},
-  plex:{label:"IBM Plex Sans", css:'"IBM Plex Sans","Helvetica Neue",Arial,sans-serif'},
-  fraunces:{label:"Fraunces (serif)", css:'"Fraunces",Georgia,serif'},
-  sharetech:{label:"Share Tech Mono (terminal)", css:'"Share Tech Mono","Overpass Mono",ui-monospace,Menlo,monospace'},
-  vt323:{label:"VT323 (CRT)", css:'"VT323","Share Tech Mono",ui-monospace,Menlo,monospace'},
-  plexmono:{label:"IBM Plex Mono", css:'"IBM Plex Mono",ui-monospace,Menlo,monospace'},
-  mono:{label:"Overpass Mono", css:'"Overpass Mono",ui-monospace,Menlo,monospace'}
-};
-const KEY = "roadkleer-v2";
-const clone = o => JSON.parse(JSON.stringify(o));
-function merge(base, over){ // keep new default keys if saved data lacks them
-  const out = clone(base);
-  if(!over || typeof over!=="object") return out;
-  if(typeof over.appName==="string") out.appName = over.appName;
-  Object.assign(out.style, over.style||{});
-  for(const k in out.screens) Object.assign(out.screens[k], (over.screens||{})[k]||{});
-  return out;
-}
-let S = clone(DEFAULT);
-let hadLocal = false;
-try{ const raw = localStorage.getItem(KEY); if(raw){ S = merge(DEFAULT, JSON.parse(raw)); hadLocal = true; } }catch(e){}
-
-const view = { screen:"welcome", picks:{animal:null, condition:null, send:[], feeling:null}, stamp:null };
+let screen = "welcome";
+let picks, fix, gpsState = "idle";
+function fresh(){ picks = {animal:null,condition:null,send:[],feeling:null}; fix = null; gpsState = "idle"; }
+fresh();
 
 const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const txt = s => esc(s).replace(/\n/g,"<br>");
 const lines = s => String(s).split("\n").map(x=>x.trim()).filter(Boolean);
 
-/* ---------- phone render ---------- */
-const phone = document.getElementById("phone");
-function applyStyle(){
-  const st = S.style;
-  phone.style.setProperty("--a-accent", st.accent);
-  phone.style.setProperty("--a-bg", st.bg);
-  phone.style.setProperty("--a-text", st.text);
-  phone.style.setProperty("--a-muted", `color-mix(in srgb, ${st.text} 62%, ${st.bg})`);
-  phone.style.setProperty("--a-border", `color-mix(in srgb, ${st.text} 18%, ${st.bg})`);
-  phone.style.setProperty("--a-soft", `color-mix(in srgb, ${st.accent} 14%, ${st.bg})`);
-  phone.classList.toggle("noscan", !st.scanlines);
-  phone.style.setProperty("--a-alarm", st.alarm);
-  phone.style.setProperty("--a-font", (FONTS[st.font]||FONTS.overpass).css);
-  phone.style.setProperty("--a-size", st.size+"px");
-  phone.style.setProperty("--a-h", st.heading+"px");
-  phone.style.setProperty("--a-radius", st.radius+"px");
+function history(){ try{ return JSON.parse(localStorage.getItem(HKEY)) || []; }catch(e){ return []; } }
+function keep(r){ try{ const h = history(); h.unshift(r); localStorage.setItem(HKEY, JSON.stringify(h.slice(0,50))); }catch(e){} }
+
+function head(c, opts={}){
+  const n = history().length;
+  return `<header class="head">
+    ${opts.back?`<button class="back" type="button" data-go="back" aria-label="Back">‹</button>`:""}
+    <span class="brand">${esc(C.appName)}</span>
+    ${opts.hist && n?`<button class="hist" type="button" data-go="history">My reports · ${n}</button>`:""}
+    <span class="tag">${txt(c.tag)}</span></header>`;
 }
-function optionList(key, multi){
-  const sel = view.picks[key];
-  return `<div class="opts" role="${multi?"group":"radiogroup"}">` + lines(S.screens[key].options).map(o=>{
+const foot = t => `<footer class="foot">${txt(t)}</footer>`;
+const gpsLine = () => {
+  if(gpsState==="wait") return `<div class="gps wait"><i></i>Locking GPS…</div>`;
+  if(gpsState==="on" && fix) return `<div class="gps on"><i></i>Spot marked · ${fix.lat.toFixed(5)}, ${fix.lon.toFixed(5)} · ±${Math.round(fix.acc)} m</div>`;
+  if(gpsState==="off") return `<div class="gps"><i></i>No GPS fix · report will file without a pin</div>`;
+  return "";
+};
+function options(key, multi){
+  const sel = picks[key];
+  return `<div class="opts" role="${multi?"group":"radiogroup"}">` + lines(S[key].options).map(o=>{
     const on = multi ? sel.includes(o) : sel===o;
     return `<button type="button" class="opt${multi?" multi":""}" data-pick="${esc(key)}" data-val="${esc(o)}" aria-pressed="${on}"><span class="dot"></span><span>${esc(o)}</span></button>`;
   }).join("") + `</div>`;
 }
-function render(){
-  applyStyle();
-  const k = view.screen, c = S.screens[k], sc = SCHEMA[k];
-  const step = sc.step;
-  let head = `<div class="ahead">${step?`<button class="back" type="button" data-go="back" aria-label="Back">‹</button>`:""}<span>${esc(S.appName)}</span><span class="tag">${txt(c.tag)}</span></div>`;
-  if(step && S.style.progress) head += `<div class="progress"><b style="width:${step*25}%"></b></div>`;
-  let body = "";
-  if(k==="welcome"){
-    body = `<div class="body center">
-      <p class="ap">${txt(c.kicker)}</p><h1 class="ah1">${txt(c.title)}</h1>
-      <button class="panic" type="button" data-go="animal">${txt(c.button)}</button>
-      <p class="ap lead">${txt(c.body)}</p><p class="ap fine">${txt(c.note)}</p></div>`;
-  } else if(step){
-    const multi = k==="send";
-    const needs = k!=="feeling";
-    const ok = !needs || (multi ? view.picks.send.length>0 : !!view.picks[k]);
-    body = `<div class="body"><h1 class="ah1">${txt(c.title)}</h1>${c.sub?`<p class="ap">${txt(c.sub)}</p>`:""}
-      ${optionList(k, multi)}
-      ${k==="animal"?`<button class="ghost" type="button" data-go="domestic">${txt(c.domestic)}</button>`:""}
-      <button class="cta" type="button" data-go="next" ${ok?"":"disabled"}>${txt(c.next)}</button></div>`;
-  } else if(k==="done"){
-    const p = view.picks, st = view.stamp || stamp();
-    const receipt = S.style.receipt ? `<dl class="receipt">
-      <dt>Animal</dt><dd>${esc(p.animal||"—")}</dd><dt>Condition</dt><dd>${esc(p.condition||"—")}</dd>
-      <dt>Sent to</dt><dd>${esc(p.send.join(", ")||"—")}</dd><dt>Feeling</dt><dd>${esc(p.feeling||"—")}</dd>
-      <dt>Logged</dt><dd>${st.time}</dd><dt>GPS</dt><dd>${st.gps} <span style="color:var(--a-muted)">(simulated)</span></dd></dl>` : "";
-    body = `<div class="body center"><span class="pill">${txt(c.pill)}</span><h1 class="ah1">${txt(c.title)}</h1><p class="ap lead">${txt(c.body)}</p>${receipt}
-      <button class="cta" type="button" data-go="reset" style="margin-top:8px">${txt(c.again)}</button></div>`;
-  } else if(k==="domestic"){
-    body = `<div class="body center"><span class="pill">${txt(c.pill)}</span><h1 class="ah1" style="font-size:calc(var(--a-h)*.85)">${txt(c.title)}</h1><p class="ap">${txt(c.body)}</p>
-      <button class="cta" type="button" data-go="welcome" style="margin-top:8px">${txt(c.back)}</button></div>`;
+
+function render(keepScroll){
+  const y = keepScroll ? app.querySelector(".body")?.scrollTop : 0;
+  let h = "";
+  if(screen==="welcome"){
+    const c = S.welcome;
+    h = head(c,{hist:true}) + `<div class="body center">
+      <p class="kicker">${txt(c.kicker)}</p><h1>${txt(c.title)}</h1>
+      <button class="panic${gpsState==="wait"?" busy":""}" type="button" data-go="mark">${gpsState==="wait"?"Marking…":txt(c.button)}</button>
+      <p class="lead">${txt(c.body)}</p><p class="fine">${txt(c.note)}</p></div>` + foot(c.footer);
+  } else if(ORDER.includes(screen)){
+    const c = S[screen], step = ORDER.indexOf(screen)+1, multi = screen==="send";
+    const ok = screen==="feeling" || (multi ? picks.send.length>0 : !!picks[screen]);
+    h = head(c,{back:true}) + `<div class="progress"><b style="width:${step*25}%"></b></div>
+      <div class="body">${step===1?gpsLine():""}<h1>${txt(c.title)}</h1>${c.sub?`<p>${txt(c.sub)}</p>`:""}
+      ${options(screen, multi)}
+      ${screen==="animal"?`<button class="ghost" type="button" data-go="domestic">${txt(c.domestic)}</button>`:""}
+      <button class="cta" type="button" data-go="next" ${ok?"":"disabled"}>${txt(c.next)}</button></div>` + foot(c.footer);
+  } else if(screen==="sending"){
+    h = head(S.feeling) + `<div class="body center"><div class="gps wait"><i></i>Transmitting report…</div></div>` + foot(S.feeling.footer);
+  } else if(screen==="done"){
+    const c = S.done, r = history()[0];
+    h = head(c) + `<div class="body center"><span class="pill">${txt(c.pill)}</span><h1>${txt(c.title)}</h1><p class="lead">${txt(c.body)}</p>
+      ${r?receipt(r):""}
+      <button class="cta" type="button" data-go="again" style="margin-top:8px">${txt(c.again)}</button></div>` + foot(c.footer);
+  } else if(screen==="domestic"){
+    const c = S.domestic;
+    h = head(c,{back:true}) + `<div class="body center"><span class="pill">${txt(c.pill)}</span><h1 style="font-size:calc(var(--h)*.85)">${txt(c.title)}</h1><p>${txt(c.body)}</p>
+      <button class="cta" type="button" data-go="home" style="margin-top:8px">${txt(c.back)}</button></div>` + foot(c.footer);
+  } else if(screen==="history"){
+    const hs = history();
+    h = `<header class="head"><button class="back" type="button" data-go="home" aria-label="Back">‹</button><span class="brand">${esc(C.appName)}</span><span class="tag">My reports</span></header>
+      <div class="body">${hs.length ? `<div class="list">${hs.map(r=>`<div class="item"><strong>${esc(r.animal)}</strong><span class="when">${when(r.t)}</span>
+        <span>${esc(r.condition)}</span><span class="id">${esc(r.id)}</span>
+        ${r.lat!=null?`<a href="${mapUrl(r)}" target="_blank" rel="noopener">${r.lat.toFixed(4)}, ${r.lon.toFixed(4)} ↗</a>`:`<span class="id">No pin</span>`}</div>`).join("")}</div>`
+        : `<p class="empty">No reports yet.</p>`}</div>` + foot(S.welcome.footer);
   }
-  phone.innerHTML = `<div class="sbar"><span>9:41</span><i>▂▄▆ ◔</i></div>${head}${body}<div class="afoot">${txt(c.footer)}</div>`;
-  document.getElementById("where").textContent = "Viewing: " + sc.label;
-  document.querySelectorAll(".chip").forEach(ch=>ch.setAttribute("aria-current", ch.dataset.screen===k));
+  app.innerHTML = `<div class="screen" style="display:contents">${h}</div>`;
+  const b = app.querySelector(".body"); if(b) b.scrollTop = y || 0;
 }
-function stamp(){
-  const lat = (30 + Math.random()*5).toFixed(4), lon = (95 + Math.random()*6).toFixed(4);
+const mapUrl = r => `https://www.google.com/maps?q=${r.lat},${r.lon}`;
+const when = t => new Date(t).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+function receipt(r){
+  return `<dl class="receipt">
+    <dt>Report</dt><dd>${esc(r.id)}</dd>
+    <dt>Animal</dt><dd>${esc(r.animal)}</dd><dt>Condition</dt><dd>${esc(r.condition)}</dd>
+    <dt>Sent to</dt><dd>${esc(r.send.join(", "))}</dd>${r.feeling?`<dt>Feeling</dt><dd>${esc(r.feeling)}</dd>`:""}
+    <dt>Logged</dt><dd>${when(r.t)}</dd>
+    <dt>Spot</dt><dd>${r.lat!=null?`<a href="${mapUrl(r)}" target="_blank" rel="noopener">${r.lat.toFixed(5)}, ${r.lon.toFixed(5)} ↗</a>`:"No GPS fix"}</dd></dl>`;
+}
+
+function mark(){
+  gpsState = "wait"; render();
+  const proceed = () => { screen = "animal"; render(); };
+  if(!("geolocation" in navigator)){ gpsState="off"; return setTimeout(proceed, 600); }
+  let done = false;
+  const finish = () => { if(!done){ done = true; proceed(); } };
+  navigator.geolocation.getCurrentPosition(
+    p => { fix = {lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy}; gpsState="on"; finish(); },
+    () => { gpsState="off"; finish(); },
+    {enableHighAccuracy:true, timeout:9000, maximumAge:30000});
+  setTimeout(()=>{ if(!done){ gpsState = fix ? "on" : "off"; finish(); } }, 10000);
+  try{ navigator.vibrate && navigator.vibrate(30); }catch(e){}
+}
+function submit(){
   const d = new Date();
-  view.stamp = { time: d.toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}), gps:`${lat}° N, ${lon}° W` };
-  return view.stamp;
+  const id = "RK-" + String(d.getFullYear()).slice(2) + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0") + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
+  keep({id, t:d.toISOString(), animal:picks.animal, condition:picks.condition, send:picks.send.slice(), feeling:picks.feeling,
+        lat:fix?fix.lat:null, lon:fix?fix.lon:null});
+  screen = "sending"; render();
+  setTimeout(()=>{ screen = "done"; render(); try{ navigator.vibrate && navigator.vibrate([20,60,20]); }catch(e){} }, 1400);
 }
-const ORDER = ["animal","condition","send","feeling","done"];
-function go(to){
-  const k = view.screen;
-  if(to==="next"){ to = ORDER[ORDER.indexOf(k)+1]; if(to==="done") stamp(); }
-  else if(to==="back"){ to = ORDER.indexOf(k)>0 ? ORDER[ORDER.indexOf(k)-1] : "welcome"; }
-  else if(to==="reset"){ resetPicks(); to="welcome"; }
-  view.screen = to; render(); fillText();
-  phone.querySelector(".body")?.scrollTo(0,0);
-}
-function resetPicks(){ view.picks = {animal:null,condition:null,send:[],feeling:null}; view.stamp=null; }
-phone.addEventListener("click", e=>{
+
+app.addEventListener("click", e=>{
   const b = e.target.closest("button"); if(!b) return;
-  if(b.dataset.go) return go(b.dataset.go);
+  const g = b.dataset.go;
+  if(g==="mark") return mark();
+  if(g==="next"){ const i = ORDER.indexOf(screen); if(i===ORDER.length-1) return submit(); screen = ORDER[i+1]; return render(); }
+  if(g==="back"){ const i = ORDER.indexOf(screen); screen = i>0 ? ORDER[i-1] : (screen==="domestic" ? "animal" : "welcome"); if(screen==="welcome") fresh(); return render(); }
+  if(g==="again" || g==="home"){ fresh(); screen = "welcome"; return render(); }
+  if(g==="domestic" || g==="history"){ screen = g; return render(); }
   if(b.dataset.pick){
-    const key=b.dataset.pick, v=b.dataset.val;
-    if(key==="send"){ const a=view.picks.send; const i=a.indexOf(v); i<0?a.push(v):a.splice(i,1); }
-    else view.picks[key] = view.picks[key]===v ? (key==="feeling"?null:v) : v;
-    const y = phone.querySelector(".body").scrollTop;
-    render(); phone.querySelector(".body").scrollTop = y;
+    const k = b.dataset.pick, v = b.dataset.val;
+    if(k==="send"){ const a = picks.send, i = a.indexOf(v); i<0 ? a.push(v) : a.splice(i,1); }
+    else picks[k] = picks[k]===v && k==="feeling" ? null : v;
+    render(true);
   }
 });
-document.getElementById("restart").onclick = ()=>go("reset");
-
-/* ---------- persistence ---------- */
-let saveT, dbRef = null, writing = false, dirty = false;
-const status = t => document.getElementById("saved").textContent = t;
-const now = () => new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit",second:"2-digit"});
-async function pushDb(){
-  if(!dbRef || writing) return;
-  writing = true; dirty = false;
-  try{ await dbRef.set({ json: JSON.stringify(S), savedAt: new Date().toISOString() }); status("Saved to this artifact · " + now()); }
-  catch(e){ status("Couldn't save to the artifact (" + (e && e.code || "error") + "). Use Save / Load → Copy JSON to keep a copy."); }
-  writing = false;
-  if(dirty) pushDb();
-}
-function save(){
-  clearTimeout(saveT);
-  saveT = setTimeout(()=>{
-    let ok = true; try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ ok=false; }
-    if(dbRef){ dirty = true; status("Saving…"); pushDb(); }
-    else status(ok ? "Saved in this browser only · " + now() + ". Use Save / Load → Copy JSON to keep a copy." : "Couldn't save. Use Save / Load → Copy JSON.");
-  }, 800);
-}
-(async ()=>{
-  let db = null;
-  try{ db = window.claude && window.claude.use ? await window.claude.use("db") : null; }catch(e){}
-  if(!db){ status("Edits save in this browser only. Use Save / Load → Copy JSON to keep a copy."); return; }
-  try{
-    const ref = db.doc("config/main");
-    const snap = await ref.get();
-    dbRef = ref;
-    if(snap.exists){
-      S = merge(DEFAULT, JSON.parse(snap.data().json)); resetPicks(); fillStyle(); render(); fillText();
-      try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
-      status("Loaded your saved copy · " + now());
-    } else if(hadLocal){ dirty = true; pushDb(); }
-    else status("Edits save to this artifact.");
-  }catch(e){ status("Edits save in this browser only. Use Save / Load → Copy JSON to keep a copy."); }
-})();
-
-
-/* ---------- editor ---------- */
-const chips = document.getElementById("chips");
-chips.innerHTML = Object.entries(SCHEMA).map(([k,v])=>`<button class="chip" type="button" data-screen="${k}">${esc(v.label)}</button>`).join("");
-chips.onclick = e=>{ const c=e.target.closest(".chip"); if(c) go(c.dataset.screen); };
-
-const paneText = document.getElementById("pane-text");
-function fillText(){
-  const k = view.screen, c = S.screens[k];
-  paneText.innerHTML = `<div class="field"><label for="f-app">App name <span>all screens</span></label><input type="text" id="f-app" value="${esc(S.appName)}"></div><hr>` +
-    SCHEMA[k].fields.map(([f,label,isList])=>{
-      const v = c[f]; const rows = Math.min(10, Math.max(isList?lines(v).length:1, Math.ceil(String(v).length/42), String(v).split("\n").length));
-      return `<div class="field"><label for="f-${k}-${f}">${esc(label)}${isList?`<span>${lines(v).length} items</span>`:""}</label><textarea id="f-${k}-${f}" data-f="${f}" rows="${rows}">${esc(v)}</textarea></div>`;
-    }).join("") + `<p class="hint">Line breaks show as line breaks in the app. Changing an option's wording clears it if it was selected.</p>`;
-}
-paneText.addEventListener("input", e=>{
-  const t = e.target;
-  if(t.id==="f-app") S.appName = t.value;
-  else if(t.dataset.f){
-    const k=view.screen, f=t.dataset.f; S.screens[k][f] = t.value;
-    if(f==="options"){
-      const valid = lines(t.value);
-      if(k==="send") view.picks.send = view.picks.send.filter(x=>valid.includes(x));
-      else if(!valid.includes(view.picks[k])) view.picks[k]=null;
-      const lab = t.previousElementSibling.querySelector("span"); if(lab) lab.textContent = valid.length+" items";
-    }
-  }
-  render(); save();
-});
-
-const paneStyle = document.getElementById("pane-style");
-function fillStyle(){
-  const st = S.style;
-  paneStyle.innerHTML = `
-    <div class="field"><label for="s-font">Typeface</label><select id="s-font">${Object.entries(FONTS).map(([k,f])=>`<option value="${k}" ${k===st.font?"selected":""}>${f.label}</option>`).join("")}</select></div>
-    <div class="field"><label for="s-size">Body text size</label><div class="row"><input type="range" id="s-size" min="12" max="18" step="0.5" value="${st.size}"><output>${st.size}px</output></div></div>
-    <div class="field"><label for="s-heading">Headline size</label><div class="row"><input type="range" id="s-heading" min="18" max="36" step="1" value="${st.heading}"><output>${st.heading}px</output></div></div>
-    <div class="field"><label for="s-radius">Option corner radius</label><div class="row"><input type="range" id="s-radius" min="0" max="24" step="1" value="${st.radius}"><output>${st.radius}px</output></div></div>
-    <hr>
-    <div class="field"><label for="s-text">Text color</label><div class="swatch"><input type="color" id="s-text" value="${st.text}"><span class="hint">${st.text}</span></div></div>
-    <div class="field"><label for="s-bg">Background</label><div class="swatch"><input type="color" id="s-bg" value="${st.bg}"><span class="hint">${st.bg}</span></div></div>
-    <div class="field"><label for="s-accent">Accent (buttons, selections)</label><div class="swatch"><input type="color" id="s-accent" value="${st.accent}"><span class="hint">${st.accent}</span></div></div>
-    <div class="field"><label for="s-alarm">Big button</label><div class="swatch"><input type="color" id="s-alarm" value="${st.alarm}"><span class="hint">${st.alarm}</span></div></div>
-    <hr>
-    <label class="row hint"><input type="checkbox" id="s-scanlines" ${st.scanlines?"checked":""}> Scanlines</label>
-    <label class="row hint"><input type="checkbox" id="s-progress" ${st.progress?"checked":""}> Show progress bar on report steps</label>
-    <label class="row hint"><input type="checkbox" id="s-receipt" ${st.receipt?"checked":""}> Show report receipt on Thanks screen</label>`;
-}
-paneStyle.addEventListener("input", e=>{
-  const t=e.target, k=t.id.replace("s-",""); if(!(k in S.style)) return;
-  S.style[k] = t.type==="checkbox" ? t.checked : (t.type==="range" ? +t.value : t.value);
-  const out = t.parentElement.querySelector("output, .hint"); if(out && t.type!=="checkbox") out.textContent = t.type==="range" ? t.value+"px" : t.value;
-  render(); save();
-});
-
-document.querySelectorAll(".tab").forEach(tb=>tb.onclick=()=>{
-  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected", x===tb));
-  for(const p of ["text","style","data"]) document.getElementById("pane-"+p).hidden = p!==tb.dataset.tab;
-  if(tb.dataset.tab==="data") document.getElementById("json").value = JSON.stringify(S,null,2);
-});
-
-const msg = t=>document.getElementById("dataMsg").textContent=t;
-document.getElementById("copyJson").onclick = ()=>{
-  const ta = document.getElementById("json"); ta.value = JSON.stringify(S,null,2);
-  navigator.clipboard.writeText(ta.value).then(()=>msg("Copied to clipboard.")).catch(()=>{ ta.focus(); ta.select(); msg("Clipboard blocked — the JSON is selected, press Cmd/Ctrl+C."); });
-};
-document.getElementById("loadJson").onclick = ()=>{
-  try{ S = merge(DEFAULT, JSON.parse(document.getElementById("json").value)); resetPicks(); fillStyle(); go("welcome"); save(); msg("Loaded."); }
-  catch(e){ msg("That isn't valid JSON. Paste the full block you copied, starting with {."); }
-};
-let armed=false, armT;
-document.getElementById("reset").onclick = e=>{
-  const b=e.currentTarget;
-  if(!armed){ armed=true; b.textContent="Click again to reset all edits"; armT=setTimeout(()=>{armed=false;b.textContent="Reset to saved version";},3000); return; }
-  clearTimeout(armT); armed=false; b.textContent="Reset to saved version";
-  S = clone(DEFAULT); resetPicks(); fillStyle(); go("welcome"); save();
-  document.getElementById("json").value = JSON.stringify(S,null,2); msg("Reset to the version built into the file.");
-};
-
-fillStyle(); render(); fillText();
+render();
 </script>
 </body>
 </html>
